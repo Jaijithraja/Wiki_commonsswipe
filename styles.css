@@ -1,0 +1,1026 @@
+/* 
+ * Commons Swipe - Prototype
+ * A prototype implementation for browsing Wikimedia Commons images
+ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    background-color: #000;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    flex-direction: column;
+    background-color: #0c0c0c;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.view.active {
+    display: flex;
+}
+
+.view.zooming {
+    transform: scale(1.1);
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+header {
+    padding: 0.5rem 0rem;
+    background-color:white;
+    color: #2b6cb0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 4rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+.search-container {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 2.4rem;
+  }
+  
+  #searchInput {
+    height: 70%;           /* Match container height */
+    padding: 0 0.8rem; 
+    font-size: 0.9rem;
+    color: #000;
+  }
+  
+  #searchBtn {
+    background:#2b6cb0;
+    border: none;
+    height: 70%;           /* Match container height */
+    width: 2.4rem;
+    padding: 0.4rem 0.6rem;
+    color: #fff;
+    cursor: pointer;
+  }
+  
+  #searchBtn i {
+    font-size: 1rem;
+  }
+
+h1 {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+h1::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/4/4a/Commons-logo.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: brightness(0) saturate(100%) invert(35%) sepia(50%) saturate(1000%) hue-rotate(190deg) brightness(90%) contrast(90%);
+}
+
+button {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: none;
+    border: none;
+    color: #2b6cb0;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+}
+
+button:hover {
+    opacity: 1;
+}
+
+button i {
+    font-size: 1.1rem;
+}
+
+.login-top {
+  position: absolute;
+  top: 10px;
+  right: 350px;
+  color:#2b6cb0;
+  padding: 10px 20px;
+  background: none;
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+}
+
+.login-top:hover {
+  background-color: #dbdfe4;
+}
+
+#downloadBtn {
+  position: absolute;
+  background: grey;
+  color: white;
+  border: none;
+  top:55%;
+  left:97%;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;       /* centers vertically */
+  justify-content: center;   /* centers horizontally */
+  cursor: pointer;
+  z-index: 3;
+}
+
+#downloadBtn:hover {
+  background-color: #0056b3;
+}
+
+#downloadBtn .icon {
+  width: 4rem;
+  height: 1.9rem;
+  font-size: 3rem;
+  fill: white; /* If using SVG */
+}
+
+.image-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+   
+    height:100vh;
+    width: 100vw;
+}
+
+.image-feed {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.image-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0a0a0a;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translateY(0);
+    will-change: transform;
+    z-index: 2;
+    overflow: hidden;
+}
+
+.image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+    opacity: 0;
+}
+
+.image-card.loaded img {
+    opacity: 1;
+}
+
+.image-card img:hover {
+    transform: scale(1.02);
+}
+
+.image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    color: white;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+    z-index: 2;
+    height: 16rem;
+    background-size: 100% 100%;
+    background-position: bottom;
+    padding-top: 0;
+}
+
+.image-info p {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.image-info a {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.image-info a:hover {
+    opacity: 0.8;
+}
+
+.info-button {
+    font-size: 1.2rem;
+    margin-top: 0.5rem;
+    display: inline-block;
+    padding: 0.5rem;
+    color: rgba(255, 255, 255, 0.8);
+    transition: opacity 0.2s;
+}
+
+.info-button:hover {
+    opacity: 1;
+    color: white;
+}
+
+.license-info {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0.5rem 0;
+}
+
+#categoriesView {
+    display: none;
+    flex-direction: column;
+    background-color: #000;
+    height: 100vh;
+    margin-top: 3rem;
+}
+
+#categoriesView.active {
+    display: flex;
+}
+
+.categories-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    -webkit-overflow-scrolling: touch;
+    height: calc(100vh - 3rem);
+    width: 100vw;
+}
+
+.categories-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    padding-bottom: 2rem;
+}
+
+.category-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.category-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(43, 108, 176, 0.1), rgba(43, 108, 176, 0.2));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.category-item:hover::before {
+    opacity: 1;
+}
+
+.category-item.selected {
+    background-color: rgba(43, 108, 176, 0.3);
+    border: 2px solid #2b6cb0;
+}
+
+.category-item i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: #2b6cb0;
+    opacity: 0.8;
+    transition: transform 0.3s ease;
+}
+
+.category-item:hover i {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.category-item span {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    text-transform: capitalize;
+}
+
+.category-item .count {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.25rem;
+}
+
+/* Category icons based on category name */
+.category-item[data-category*="Animals"] i { content: "\f6d3"; }
+.category-item[data-category*="Architecture"] i { content: "\f54f"; }
+.category-item[data-category*="Art"] i { content: "\f53f"; }
+.category-item[data-category*="Astronomy"] i { content: "\f7a2"; }
+.category-item[data-category*="Biology"] i { content: "\f7a4"; }
+.category-item[data-category*="Buildings"] i { content: "\f54f"; }
+.category-item[data-category*="Cities"] i { content: "\f64f"; }
+.category-item[data-category*="Computers"] i { content: "\f109"; }
+.category-item[data-category*="Culture"] i { content: "\f7a1"; }
+.category-item[data-category*="Earth"] i { content: "\f7a2"; }
+.category-item[data-category*="Education"] i { content: "\f19d"; }
+.category-item[data-category*="Engineering"] i { content: "\f7a4"; }
+.category-item[data-category*="Environment"] i { content: "\f7a2"; }
+.category-item[data-category*="Events"] i { content: "\f073"; }
+.category-item[data-category*="Food"] i { content: "\f2e7"; }
+.category-item[data-category*="Geography"] i { content: "\f5a1"; }
+.category-item[data-category*="History"] i { content: "\f1da"; }
+.category-item[data-category*="Human_body"] i { content: "\f183"; }
+.category-item[data-category*="Industry"] i { content: "\f275"; }
+.category-item[data-category*="Landscapes"] i { content: "\f3fe"; }
+.category-item[data-category*="Light"] i { content: "\f0eb"; }
+.category-item[data-category*="Maps"] i { content: "\f5a1"; }
+.category-item[data-category*="Mathematics"] i { content: "\f1ec"; }
+.category-item[data-category*="Medicine"] i { content: "\f0fa"; }
+.category-item[data-category*="Military"] i { content: "\f6e4"; }
+.category-item[data-category*="Music"] i { content: "\f001"; }
+.category-item[data-category*="Nature"] i { content: "\f1bb"; }
+.category-item[data-category*="People"] i { content: "\f183"; }
+.category-item[data-category*="Physics"] i { content: "\f7a4"; }
+.category-item[data-category*="Plants"] i { content: "\f1bb"; }
+.category-item[data-category*="Politics"] i { content: "\f0e3"; }
+.category-item[data-category*="Religion"] i { content: "\f6d3"; }
+.category-item[data-category*="Science"] i { content: "\f7a4"; }
+.category-item[data-category*="Sports"] i { content: "\f44e"; }
+.category-item[data-category*="Technology"] i { content: "\f109"; }
+.category-item[data-category*="Transport"] i { content: "\f5b6"; }
+.category-item[data-category*="Travel"] i { content: "\f5b6"; }
+.category-item[data-category*="Weather"] i { content: "\f73d"; }
+.category-item[data-category*="Wildlife"] i { content: "\f6d3"; }
+.category-item[data-category*="World_Heritage_Sites"] i { content: "\f54f"; }
+.category-item[data-category*="Zoology"] i { content: "\f6d3"; }
+
+/* Loading indicator */
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: white;
+    font-size: 1rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: #2b6cb0;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Swipe indicators */
+.swipe-indicator {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.swipe-indicator.active {
+    opacity: 1;
+}
+
+
+
+.swipe-up {
+    top: 0;
+    transform: translateY(-100%);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
+}
+
+.swipe-down {
+    bottom: 0;
+    transform: translateY(100%);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+}
+
+.swipe-indicator i {
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Keyboard navigation hint */
+.keyboard-hint {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .keyboard-hint {
+        display: block;
+    }
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #666;
+}
+
+.image-preview {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: #000;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.3;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview .image-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    color: white;
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    opacity: 0.7;
+    height: 16rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    background-size: 100% 100%;
+    background-position: bottom;
+    padding-top: 0;
+}
+
+.image-preview .image-info p {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.image-preview .image-info .license-info {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.category-search {
+    flex: 1;
+    max-width: 400px;
+    margin: 0 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.category-search input {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid rgba(43, 108, 176, 0.2);
+    border-radius: 4px;
+    background-color: white;
+    color: #2b6cb0;
+    font-size: 0.9rem;
+}
+
+.category-search input::placeholder {
+    font-family: 'CC Accidenz Commons', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color: rgba(43, 108, 176, 0.5);
+}
+
+.category-search button {
+    padding: 0.5rem;
+    background-color: #2b6cb0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.category-search button:hover {
+    background-color: #2c5282;
+}
+
+.remove-category {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.remove-category:hover {
+    color: white;
+}
+
+/* Desktop specific styles */
+@media (min-width: 768px) {
+    .categories-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .categories-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .categories-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .categories-container::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+    }
+
+    .categories-container::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+}
+
+.image-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    z-index: 1;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.image-card img,
+.image-preview img {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.image-card.loaded img,
+.image-preview.loaded img {
+    opacity: 1;
+}
+
+.image-card.loaded .image-loading,
+.image-preview.loaded .image-loading {
+    display: none;
+}
+
+.image-card .info-link {
+    position: fixed;
+    top: 1.5rem;
+    right: 1rem;
+    color: white;
+    z-index: 1000;
+    text-decoration: none;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-card .info-link i {
+    font-size: 1.2rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.scroll-indicator {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    animation: bounce 2s 1;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.3s ease;
+}
+
+.scroll-indicator:hover {
+    color: rgba(255, 255, 255, 1);
+    transform: translateX(-50%) scale(1.1);
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0) translateX(-50%);
+    }
+    40% {
+        transform: translateY(-10px) translateX(-50%);
+    }
+    60% {
+        transform: translateY(-5px) translateX(-50%);
+    }
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: #2b6cb0;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.close-button:hover {
+    background-color: rgba(43, 108, 176, 0.1);
+    transform: scale(1.1);
+}
+
+.close-button i {
+    font-size: 1.2rem;
+}
+.filter-button:hover
+{
+    background-color: rgba(216, 222, 229, 0.1);
+    transform: scale(1.1);
+}
+.filter-button {
+    background: none;
+    border: none;
+    color: #2b6cb0;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    left:35%;
+    opacity: 0.9;
+    transition: all 0.2s;
+    position: relative;
+}
+.container {
+      position: relative;
+      width: 300px;
+    }
+
+    img {
+      width: 100%;
+      display: block;
+    }
+
+    .like-btn {
+        position: absolute;
+       top:400%;
+    left:290%;
+    background:grey;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    
+    cursor: pointer;
+    z-index: 3;
+
+    }
+
+    .like-btn i {
+      color:white;;
+      font-size: 20px;
+      align-content: center;
+    }
+
+    .like-btn.liked i {
+      color: red;
+    }
+
+    .like-btn:hover {
+      background-color: #1e4f91;
+    }
+
+    .favorite-btn {
+        top:65%;
+    left:97%;
+        position: absolute;
+        background: grey;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;         /* ✅ vertically center icon */
+        justify-content: center;     /* ✅ horizontally center icon */
+        cursor: pointer;
+        z-index: 3;
+      }
+      
+      .favorite-btn i {
+        color: white;
+        font-size: 20px;
+      }
+      
+      /* ⭐ Liked Star */
+      .favorite-btn.liked i {
+        color: gold;
+      }
+      
+      .favorite-btn:hover {
+        background: #333;
+      }
+    .comment-button {
+       position: absolute;
+    top: 45%;
+    right: 1.0rem;
+    
+    background: grey;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+
+    }
+
+    .comment-button i {
+        color:white;
+        align-content: center;
+      font-size: 18px;
+    }
+
+    .comment-button:hover {
+      background-color: #1e4f91;
+    }
+
+   
+
+.filter-button.active {
+    color: #4CAF50;
+}
+
+.filter-button.active::after {
+    content: '1';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 0.6rem;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .image-info {
+        height: 12rem;
+        padding-bottom: 4rem;
+    }
+    
+    .image-preview .image-info {
+        height: 12rem;
+        padding-bottom: 4rem;
+    }
+    
+    .scroll-indicator {
+        bottom: 1.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .image-info {
+        padding-top: 8rem;
+    }
+    
+    .image-preview .image-info {
+        padding-top: 8rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .app-container {
+        height: 100dvh;
+        width: 100vw;
+    }
+    
+    .view {
+        height: 100dvh;
+        width: 100vw;
+    }
+    
+    .image-container {
+         flex: 1;
+    overflow: hidden;
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+    margin-top: 4rem;
+    }
+    
+    .categories-container {
+        height: calc(100dvh - 3rem);
+    }
+}
+
+@supports (-webkit-touch-callout: none) {
+    .app-container {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+    
+    .view {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+    
+    .image-container {
+        height: calc(-webkit-fill-available - 3rem);
+    }
+    
+    .categories-container {
+        height: calc(-webkit-fill-available - 3rem);
+    }
+    
+    .image-info {
+        padding-bottom: max(4rem, env(safe-area-inset-bottom, 4rem));
+    }
+    
+    .image-preview .image-info {
+        padding-bottom: max(4rem, env(safe-area-inset-bottom, 4rem));
+    }
+}
+
+@media (max-width: 767px) {
+    .image-info {
+        height: 12rem;
+        padding-bottom: 4rem;
+    }
+    
+    .image-preview .image-info {
+        height: 12rem;
+        padding-bottom: 4rem;
+    }
+    
+    .scroll-indicator {
+        bottom: 1.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .image-info {
+        padding-top: 8rem;
+    }
+    
+    .image-preview .image-info {
+        padding-top: 8rem;
+    }
+} 
