@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Commons Swipe - Instagram-like Wikimedia Commons Browser
 
 A modern, Instagram-style web application for browsing Wikimedia Commons images with user authentication and social features.
@@ -101,3 +102,6 @@ Feel free to submit issues and enhancement requests!
 ## License
 
 This project is open source and available under the MIT License. 
+=======
+# Wiki_commonsswipe
+>>>>>>> a3a2f846fd70867401b02a5042e701af29a8d712
